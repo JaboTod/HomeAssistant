@@ -1,0 +1,445 @@
+blueprint:
+  name: Z2M v2.0 - Inovelli 2-in-1 switch + dimmer Scene Controls (+ Brightness Mirror)
+  description: 'For Inovelli Blue Series 2-in-1 switch + dimmer, model VZM31-SN
+
+    Local fork of starbuck93''s "Z2M v2.0 - Inovelli 2-in-1 switch + dimmer Scene
+    Controls" blueprint, for switches running in Smart Bulb Mode (the switch''s
+    own relay/dimmer is decoupled from real bulbs and only used as a local
+    dimming remote).
+
+    **v3 - state-based mirroring, one trigger:** an optional **Target Light**
+    input plus a **Source Light** input (the switch''s own `light.<device>`
+    entity - Zigbee2MQTT exposes it as a dimmable light in Smart Bulb Mode).
+    Instead of reacting to button-press events (which race against the
+    switch''s own state update and were inconsistent), this watches the
+    Source Light''s state directly with a single trigger:
+
+    - Whenever the switch turns ON, or its brightness changes for any reason
+    (single tap, double tap, holding up/down to dim, anything), the target
+    light is turned on/updated to match - in real time, including continuously
+    while you hold the paddle.
+
+    - Whenever the switch turns OFF, the target light is turned off.
+
+    Deliberately a single trigger, not separate on/off/brightness triggers:
+    Zigbee2MQTT reports state and brightness together in one MQTT message, so
+    separate triggers fire simultaneously from the same physical action. Mode
+    `parallel` (instead of `restart`) means an overlapping button-press
+    trigger can never cancel a mirror action (or vice versa) mid-flight -
+    that race was the cause of "switch won''t turn off" in the v2 attempt.
+
+    This mirroring runs independently of, and before, the per-action inputs
+    below (config_held, up_single, down_single, etc.) - those still fire on
+    their original button-press triggers for any extra custom actions you want
+    (notifications, scenes, etc.). If one of those inputs already contains a
+    manual `light.turn_on`/`light.turn_off` on the target, remove it to avoid
+    calling the service twice.
+
+    Leave Target Light empty to use this exactly like the original blueprint
+    (no mirroring, no behavior change).
+
+    Original: Allows setting a few different actions such as 2,3,4,5 clicking
+    the up/down and config buttons. Updated for use with Zigbee2MQTT v2.0 with
+    Device Actions.
+
+    '
+  domain: automation
+  input:
+    switch:
+      name: Switch
+      description: Inovelli Switch.
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: Inovelli
+          multiple: false
+    target_light:
+      name: Target Light (optional)
+      description: 'The real light(s) this switch controls in Smart Bulb Mode.
+        Mirrors the switch''s own on/off state and brightness onto these
+        lights in real time, including while holding the paddle to dim.
+        Leave empty to disable mirroring entirely.
+
+        '
+      default: []
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    source_light:
+      name: Source Light (required if Target Light is set)
+      description: 'The switch''s own dimmer entity, e.g. `light.foyerd` - Zigbee2MQTT
+        exposes the switch itself as a dimmable light in Smart Bulb Mode. Find
+        it on the switch''s device page. Ignored if Target Light is empty.
+
+        '
+      default: sun.sun
+      selector:
+        entity:
+          domain: light
+    config_held:
+      name: Hold Config
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    config_release:
+      name: Release Config
+      description: Action to run (will also stop the "Hold Down" action automatically)
+      default: []
+      selector:
+        action: {}
+    config_single:
+      name: Single Click Config
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    config_double:
+      name: Double Click Config
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    config_triple:
+      name: 3x Click Config
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    config_quadruple:
+      name: 4x Click Config
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    config_quintuple:
+      name: 5x Click Config
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    down_held:
+      name: Hold Down
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    down_release:
+      name: Release Down
+      description: Action to run (will also stop the "Hold Down" action automatically)
+      default: []
+      selector:
+        action: {}
+    down_single:
+      name: Single Click Down
+      description: This will trigger an/some action(s), but also, it will probably
+        turn off the switch locally.
+      default: []
+      selector:
+        action: {}
+    down_double:
+      name: Double Click Down
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    down_triple:
+      name: 3x Click Down
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    down_quadruple:
+      name: 4x Click Down
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    down_quintuple:
+      name: 5x Click Down
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    up_held:
+      name: Hold Up
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    up_release:
+      name: Release Up
+      description: Action to run (will also stop the "Hold Up" action automatically)
+      default: []
+      selector:
+        action: {}
+    up_single:
+      name: Single Click Up
+      description: This will trigger an/some action(s), but also, it will probably
+        turn on the switch locally.
+      default: []
+      selector:
+        action: {}
+    up_double:
+      name: Double Click Up
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    up_triple:
+      name: 3x Click Up
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    up_quadruple:
+      name: 4x Click Up
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    up_quintuple:
+      name: 5x Click Up
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+  source_url: https://gist.github.com/starbuck93/650541c589193f50a1c0cf7ca903aea2
+mode: parallel
+max: 10
+max_exceeded: silent
+trigger:
+- trigger: state
+  entity_id: !input source_light
+  id: source_change
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_double
+  trigger: device
+  id: config_double
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_release
+  trigger: device
+  id: config_release
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_held
+  trigger: device
+  id: config_held
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_quintuple
+  trigger: device
+  id: config_quintuple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_single
+  trigger: device
+  id: config_single
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_triple
+  trigger: device
+  id: config_triple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: config_quadruple
+  trigger: device
+  id: config_quadruple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_double
+  trigger: device
+  id: down_double
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_held
+  trigger: device
+  id: down_held
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_quadruple
+  trigger: device
+  id: down_quadruple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_quintuple
+  trigger: device
+  id: down_quintuple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_release
+  trigger: device
+  id: down_release
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_single
+  trigger: device
+  id: down_single
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: down_triple
+  trigger: device
+  id: down_triple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_double
+  trigger: device
+  id: up_double
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_held
+  trigger: device
+  id: up_held
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_quadruple
+  trigger: device
+  id: up_quadruple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_release
+  trigger: device
+  id: up_release
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_single
+  trigger: device
+  id: up_single
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_triple
+  trigger: device
+  id: up_triple
+- domain: mqtt
+  device_id: !input switch
+  type: action
+  subtype: up_quintuple
+  trigger: device
+  id: up_quintuple
+action:
+- variables:
+    target_light: !input target_light
+    source_light: !input source_light
+- choose:
+  - alias: Mirror source switch onto target light (single trigger - state and
+      brightness always arrive together, so there's nothing to race)
+    conditions:
+    - condition: trigger
+      id: source_change
+    - condition: template
+      value_template: '{{ target_light | count > 0 }}'
+    sequence:
+    - choose:
+      - alias: Source turned/stayed ON with a known brightness - mirror it
+        conditions:
+        - condition: template
+          value_template: '{{ trigger.to_state.state == ''on'' and trigger.to_state.attributes.brightness
+            is not none }}'
+        sequence:
+        - action: light.turn_on
+          target:
+            entity_id: '{{ target_light }}'
+          data:
+            brightness: '{{ trigger.to_state.attributes.brightness }}'
+      - alias: Source turned OFF - mirror it
+        conditions:
+        - condition: template
+          value_template: '{{ trigger.to_state.state == ''off'' }}'
+        sequence:
+        - action: light.turn_off
+          target:
+            entity_id: '{{ target_light }}'
+  - alias: Run the per-button custom action configured below
+    conditions:
+    - condition: template
+      value_template: '{{ trigger.id != ''source_change'' }}'
+    sequence:
+    - variables:
+        command: '{{ trigger.payload }}'
+    - choose:
+      - conditions:
+        - '{{ command == ''config_held'' }}'
+        sequence: !input config_held
+      - conditions:
+        - '{{ command == ''config_release'' }}'
+        sequence: !input config_release
+      - conditions:
+        - '{{ command == ''config_double'' }}'
+        sequence: !input config_double
+      - conditions:
+        - '{{ command == ''config_quadruple'' }}'
+        sequence: !input config_quadruple
+      - conditions:
+        - '{{ command == ''config_quintuple'' }}'
+        sequence: !input config_quintuple
+      - conditions:
+        - '{{ command == ''config_single'' }}'
+        sequence: !input config_single
+      - conditions:
+        - '{{ command == ''config_triple'' }}'
+        sequence: !input config_triple
+      - conditions:
+        - '{{ command == ''down_double'' }}'
+        sequence: !input down_double
+      - conditions:
+        - '{{ command == ''down_held'' }}'
+        sequence: !input down_held
+      - conditions:
+        - '{{ command == ''down_quadruple'' }}'
+        sequence: !input down_quadruple
+      - conditions:
+        - '{{ command == ''down_quintuple'' }}'
+        sequence: !input down_quintuple
+      - conditions:
+        - '{{ command == ''down_release'' }}'
+        sequence: !input down_release
+      - conditions:
+        - '{{ command == ''down_single'' }}'
+        sequence: !input down_single
+      - conditions:
+        - '{{ command == ''down_triple'' }}'
+        sequence: !input down_triple
+      - conditions:
+        - '{{ command == ''up_double'' }}'
+        sequence: !input up_double
+      - conditions:
+        - '{{ command == ''up_held'' }}'
+        sequence: !input up_held
+      - conditions:
+        - '{{ command == ''up_quadruple'' }}'
+        sequence: !input up_quadruple
+      - conditions:
+        - '{{ command == ''up_quintuple'' }}'
+        sequence: !input up_quintuple
+      - conditions:
+        - '{{ command == ''up_release'' }}'
+        sequence: !input up_release
+      - conditions:
+        - '{{ command == ''up_single'' }}'
+        sequence: !input up_single
+      - conditions:
+        - '{{ command == ''up_triple'' }}'
+        sequence: !input up_triple
