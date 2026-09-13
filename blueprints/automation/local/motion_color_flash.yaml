@@ -1,0 +1,163 @@
+blueprint:
+  name: Motion Color Flash (with restore)
+  description: >
+    On motion, flashes one or more lights back and forth between two colors
+    for a set duration, then restores each light to exactly what it was
+    showing before (or turns it back off, if it was off). Optionally
+    restricted to daytime (between sunrise and sunset).
+
+    Originally built for a "flash red/purple when the garage front camera
+    sees motion" automation; the colors, timing, lights, and daytime
+    restriction are all inputs so it can be reused for any light(s) and
+    any motion/occupancy sensor.
+  domain: automation
+  input:
+    devices:
+      name: Devices
+      icon: mdi:motion-sensor
+      input:
+        motion_sensor:
+          name: Motion sensor
+          description: Binary sensor that starts the flash when it turns on.
+          selector:
+            entity:
+              domain: binary_sensor
+              device_class: motion
+        target_light:
+          name: Light(s) to flash
+          description: >
+            The light(s) to flash. Each one has its own state/brightness/color
+            captured before flashing and restored afterward, so different
+            lights in the group can be doing different things beforehand.
+          selector:
+            entity:
+              domain: light
+              multiple: true
+    effect:
+      name: Flash effect
+      icon: mdi:palette
+      input:
+        color_1:
+          name: Color 1
+          default: [255, 0, 0]
+          selector:
+            color_rgb: {}
+        color_2:
+          name: Color 2
+          default: [128, 0, 128]
+          selector:
+            color_rgb: {}
+        brightness:
+          name: Flash brightness
+          default: 100
+          selector:
+            number: { min: 1, max: 100, unit_of_measurement: "%", mode: slider }
+        cycle_seconds:
+          name: Seconds per color
+          description: How long each color is held before switching to the other.
+          default: 5
+          selector:
+            number: { min: 1, max: 60, unit_of_measurement: seconds, mode: slider }
+        total_duration:
+          name: Total flash duration
+          description: How long the whole flash effect runs before restoring the light(s).
+          default: 60
+          selector:
+            number: { min: 5, max: 600, unit_of_measurement: seconds, mode: slider }
+    restrictions:
+      name: Restrictions
+      icon: mdi:sun-clock
+      collapsed: true
+      input:
+        only_between_sunrise_sunset:
+          name: Only between sunrise and sunset
+          default: true
+          selector:
+            boolean: {}
+
+mode: single
+max_exceeded: silent
+
+variables:
+  target_lights: !input target_light
+  color_1: !input color_1
+  color_2: !input color_2
+  brightness_pct: !input brightness
+  cycle_seconds: !input cycle_seconds
+  total_duration: !input total_duration
+  original_states: >
+    {% set ns = namespace(list=[]) %}
+    {% for e in target_lights %}
+      {% set ns.list = ns.list + [{
+        'entity_id': e,
+        'state': states(e),
+        'brightness': state_attr(e, 'brightness'),
+        'rgb_color': state_attr(e, 'rgb_color'),
+        'color_temp_kelvin': state_attr(e, 'color_temp_kelvin')
+      }] %}
+    {% endfor %}
+    {{ ns.list }}
+
+triggers:
+  - trigger: state
+    entity_id: !input motion_sensor
+    to: "on"
+
+conditions:
+  - condition: state
+    entity_id: sun.sun
+    state: above_horizon
+    enabled: !input only_between_sunrise_sunset
+
+actions:
+  - variables:
+      flash_start: "{{ now().timestamp() }}"
+    note: Remember start time so the repeat below knows when to stop.
+  - repeat:
+      until:
+        - "{{ (now().timestamp() - flash_start) >= total_duration }}"
+      sequence:
+        - action: light.turn_on
+          target:
+            entity_id: "{{ target_lights }}"
+          data:
+            rgb_color: "{{ color_1 }}"
+            brightness_pct: "{{ brightness_pct }}"
+        - delay:
+            seconds: "{{ cycle_seconds }}"
+        - action: light.turn_on
+          target:
+            entity_id: "{{ target_lights }}"
+          data:
+            rgb_color: "{{ color_2 }}"
+            brightness_pct: "{{ brightness_pct }}"
+        - delay:
+            seconds: "{{ cycle_seconds }}"
+    note: Alternates color_1/color_2 until total_duration has elapsed.
+  - repeat:
+      for_each: "{{ original_states }}"
+      sequence:
+        - variables:
+            item: "{{ repeat.item }}"
+        - choose:
+            - conditions: ["{{ item.state != 'on' }}"]
+              sequence:
+                - action: light.turn_off
+                  target:
+                    entity_id: "{{ item.entity_id }}"
+            - conditions: ["{{ item.rgb_color is not none }}"]
+              sequence:
+                - action: light.turn_on
+                  target:
+                    entity_id: "{{ item.entity_id }}"
+                  data:
+                    rgb_color: "{{ item.rgb_color }}"
+                    brightness: "{{ item.brightness }}"
+          default:
+            - action: light.turn_on
+              target:
+                entity_id: "{{ item.entity_id }}"
+              data:
+                color_temp_kelvin: "{{ item.color_temp_kelvin }}"
+                brightness: "{{ item.brightness }}"
+    note: Restores each light to its captured pre-flash state.
