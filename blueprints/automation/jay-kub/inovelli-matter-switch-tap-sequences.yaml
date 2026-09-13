@@ -1,0 +1,615 @@
+blueprint:
+  name: Inovelli Matter Switch Tap Sequences
+  description: "## Inovelli Matter Switch Tap Sequences\n\n### This blueprint will
+    create an automation to:\n\n  - Perform predefined actions when a button on an
+    Inovelli switch is tapped or held\n  - Bind the Inovelli Switches Light Entity
+    to a Target Light\n\n### Light Binding\n\nLight binding will sync the on/off state
+    and brightness from the Inovelli Switch to a Target Light.\n\nAdjust the device
+    settings as follows to make dimming more fluid:\n\n  - Slow down the dimming speed
+    on the Inovelli Switch to account for lag\n  - Transition speed should be set
+    to 0 for all devices\n  - Default brightness when turned on should match for all
+    devices\n  - If the target light already has a device setting for minimum brightness,
+    then leave the blueprint minimum brightness at 1\n\nHome Assistant's Matter Server
+    Add-on now supports Matter Binding, allowing the lights to communicate directly
+    with each other even when the matter server is down. If your target light supports
+    matter binding, it is recommended you use that approach instead and disable light
+    binding in this automation.\n\n### Supported Models\n  - VTM30-SN (White On/Off
+    Switch)\n  - VTM31-SN (White Dimmer Switch)\n  - VTM35-SN (White Fan Switch)\n
+    \ - VTM36 (White Fan/Light Canopy Module)\n\n### Support\n\nGo to https://github.com/jay-kub/inovelli-matter-switch-tap-sequences
+    to report issues or request new features.\n\n#### Version 0.3.4 (01/24/2026)\nBugfix:
+    fix syslog error on startup\n"
+  domain: automation
+  author: jay-kub
+  homeassistant:
+    min_version: 2024.8.0
+  input:
+    inovelli_events:
+      name: Inovelli Switch Entities
+      description: 'Example: the Event Entity for Up can be found here: Settings >
+        Devices & services > Matter > # Devices > *Select your device* > Events >
+        Up > Settings Icon > entity_id'
+      icon: mdi:devices
+      input:
+        entity_up:
+          name: Event Entity for Up
+          description: The Event Entity for Up taps
+          selector:
+            entity:
+              filter:
+              - integration: matter
+                domain:
+                - event
+                device_class:
+                - button
+              multiple: false
+              reorder: false
+        entity_down:
+          name: Event Entity for Down
+          description: The Event Entity for Down taps
+          selector:
+            entity:
+              filter:
+              - integration: matter
+                domain:
+                - event
+                device_class:
+                - button
+              multiple: false
+              reorder: false
+        entity_config:
+          name: Event Entity for Config
+          description: The Event Entity for Config taps
+          selector:
+            entity:
+              filter:
+              - integration: matter
+                domain:
+                - event
+                device_class:
+                - button
+              multiple: false
+              reorder: false
+    up_inputs:
+      name: Up
+      icon: mdi:arrow-up-thick
+      collapsed: true
+      input:
+        up1:
+          name: Single
+          description: When Up is pressed 1 time
+          default: []
+          selector:
+            action: {}
+        up2:
+          name: Double
+          description: When Up is pressed 2 times
+          default: []
+          selector:
+            action: {}
+        up3:
+          name: Triple
+          description: When Up is pressed 3 times
+          default: []
+          selector:
+            action: {}
+        up4:
+          name: Quadruple
+          description: When Up is pressed 4 times
+          default: []
+          selector:
+            action: {}
+        up5:
+          name: Quintuple
+          description: When Up is pressed 5 times
+          default: []
+          selector:
+            action: {}
+        upHeld:
+          name: Held
+          description: When Up is held
+          default: []
+          selector:
+            action: {}
+        upReleased:
+          name: Released
+          description: When Up is released
+          default: []
+          selector:
+            action: {}
+    down_inputs:
+      name: Down
+      icon: mdi:arrow-down-thick
+      collapsed: true
+      input:
+        down1:
+          name: Single
+          description: When Down is pressed 1 time
+          default: []
+          selector:
+            action: {}
+        down2:
+          name: Double
+          description: When Down is pressed 2 times
+          default: []
+          selector:
+            action: {}
+        down3:
+          name: Triple
+          description: When Down is pressed 3 times
+          default: []
+          selector:
+            action: {}
+        down4:
+          name: Quadruple
+          description: When Down is pressed 4 times
+          default: []
+          selector:
+            action: {}
+        down5:
+          name: Quintuple
+          description: When Down is pressed 5 times
+          default: []
+          selector:
+            action: {}
+        downHeld:
+          name: Held
+          description: When Down is held
+          default: []
+          selector:
+            action: {}
+        downReleased:
+          name: Released
+          description: When Down is released
+          default: []
+          selector:
+            action: {}
+    config_inputs:
+      name: Config
+      icon: mdi:button-pointer
+      collapsed: true
+      input:
+        config1:
+          name: Single
+          description: When Config is pressed 1 time
+          default: []
+          selector:
+            action: {}
+        config2:
+          name: Double
+          description: When Config is pressed 2 times
+          default: []
+          selector:
+            action: {}
+        config3:
+          name: Triple
+          description: When Config is pressed 3 times
+          default: []
+          selector:
+            action: {}
+        config4:
+          name: Quadruple
+          description: When Config is pressed 4 times
+          default: []
+          selector:
+            action: {}
+        config5:
+          name: Quintuple
+          description: When Config is pressed 5 times
+          default: []
+          selector:
+            action: {}
+        configHeld:
+          name: Held
+          description: When Config is held
+          default: []
+          selector:
+            action: {}
+        configReleased:
+          name: Released
+          description: When Config is released
+          default: []
+          selector:
+            action: {}
+    binding_inputs:
+      name: Light Binding
+      icon: mdi:sync
+      collapsed: true
+      input:
+        entity_light:
+          name: Inovelli Switch Light
+          description: The light entity for the Inovelli Switch
+          default: []
+          selector:
+            entity:
+              filter:
+              - domain:
+                - light
+              multiple: false
+              reorder: false
+        target_light:
+          name: Target Light
+          description: 'Select the light entity that will be synced to the Inovelli
+            Switch
+
+            Hint: to control multiple lights, create a light group
+
+            '
+          default: []
+          selector:
+            entity:
+              filter:
+              - domain:
+                - light
+              multiple: false
+              reorder: false
+        brightness_sync:
+          name: Brightness Sync
+          description: 'Sync the brightness from the Inovelli Switch to the Target
+            Light
+
+            Note: this setting must be disabled if your Switch Mode is set to On/Off
+
+            '
+          default: true
+          selector:
+            boolean: {}
+        reverse_sync:
+          name: Reverse Sync
+          description: If the Target Light is toggled on/off by an outside source,
+            the Inovelli Switch will sync
+          default: false
+          selector:
+            boolean: {}
+        min_brightness:
+          name: Minimum Brightness
+          description: Set the minimum brightness percent for the Target Light
+          default: 1
+          selector:
+            number:
+              min: 1.0
+              max: 100.0
+              step: 1.0
+              mode: slider
+    fan_inputs:
+      name: Fan Binding
+      icon: mdi:fan
+      collapsed: true
+      input:
+        target_fan:
+          name: Target Fan
+          description: 'Select the fan entity that will be synced to the Config button
+
+            (Held - Off)  (Single - Low) (Double - Medium) (Triple - High)
+
+            '
+          default: []
+          selector:
+            entity:
+              filter:
+              - domain:
+                - fan
+              multiple: false
+              reorder: false
+  source_url: https://github.com/jay-kub/inovelli-matter-switch-tap-sequences/blob/main/inovelli-matter-switch-tap-sequences.yaml
+mode: queued
+max_exceeded: silent
+variables:
+  reverseSyncEnabled: !input reverse_sync
+  inovelliLight: !input entity_light
+  targetFan: !input target_fan
+  brightnessSyncEnabled: !input brightness_sync
+trigger:
+- platform: state
+  entity_id: !input entity_up
+  not_from:
+  - unavailable
+  id: up
+- platform: state
+  entity_id: !input entity_down
+  not_from:
+  - unavailable
+  id: down
+- platform: state
+  entity_id: !input entity_config
+  not_from:
+  - unavailable
+  id: config
+- platform: state
+  entity_id: !input entity_light
+  id: turnOff
+  from: 'on'
+  to: 'off'
+- platform: state
+  enabled: '{{ inovelliLight is not none and not (brightnessSyncEnabled | default(false))
+    }}'
+  entity_id: !input entity_light
+  id: turnOn
+  from: 'off'
+  to: 'on'
+- platform: state
+  entity_id: !input target_light
+  id: reverseSyncTurnOff
+  from: 'on'
+  to: 'off'
+- platform: state
+  entity_id: !input target_light
+  id: reverseSyncTurnOn
+  from: 'off'
+  to: 'on'
+- platform: state
+  enabled: '{{ inovelliLight is not none }}'
+  entity_id: !input entity_light
+  attribute: brightness
+  id: turnOnWithBrightness
+condition: []
+action:
+- choose:
+  - conditions:
+    - condition: trigger
+      id:
+      - up
+    sequence:
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: multi_press_1
+        sequence: !input up1
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: multi_press_2
+        sequence: !input up2
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: multi_press_3
+        sequence: !input up3
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: multi_press_4
+        sequence: !input up4
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: multi_press_5
+        sequence: !input up5
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: long_press
+        sequence: !input upHeld
+      - conditions:
+        - condition: state
+          entity_id: !input entity_up
+          attribute: event_type
+          state: long_release
+        sequence: !input upReleased
+  - conditions:
+    - condition: trigger
+      id:
+      - down
+    sequence:
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: multi_press_1
+        sequence: !input down1
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: multi_press_2
+        sequence: !input down2
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: multi_press_3
+        sequence: !input down3
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: multi_press_4
+        sequence: !input down4
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: multi_press_5
+        sequence: !input down5
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: long_press
+        sequence: !input downHeld
+      - conditions:
+        - condition: state
+          entity_id: !input entity_down
+          attribute: event_type
+          state: long_release
+        sequence: !input downReleased
+  - conditions:
+    - condition: trigger
+      id:
+      - config
+    sequence:
+    - choose:
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: multi_press_1
+        sequence: !input config1
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: multi_press_2
+        sequence: !input config2
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: multi_press_3
+        sequence: !input config3
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: multi_press_4
+        sequence: !input config4
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: multi_press_5
+        sequence: !input config5
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: long_press
+        sequence: !input configHeld
+      - conditions:
+        - condition: state
+          entity_id: !input entity_config
+          attribute: event_type
+          state: long_release
+        sequence: !input configReleased
+  - conditions:
+    - condition: trigger
+      id:
+      - turnOff
+    sequence:
+    - action: light.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: !input target_light
+  - conditions:
+    - condition: trigger
+      id:
+      - turnOn
+    sequence:
+    - action: light.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: !input target_light
+  - conditions:
+    - condition: trigger
+      id:
+      - reverseSyncTurnOff
+      - reverseSyncTurnOn
+    sequence:
+    - if: '{{ reverseSyncEnabled }}'
+      then:
+      - choose:
+        - conditions:
+          - condition: trigger
+            id:
+            - reverseSyncTurnOff
+          sequence:
+          - action: light.turn_off
+            target:
+              entity_id: !input entity_light
+            data: {}
+        - conditions:
+          - condition: trigger
+            id:
+            - reverseSyncTurnOn
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id: !input entity_light
+            data: {}
+  - conditions:
+    - condition: trigger
+      id:
+      - turnOnWithBrightness
+    - condition: state
+      entity_id: !input entity_light
+      state: 'on'
+    sequence:
+    - variables:
+        inovelliLightBrightness: '{{ (state_attr(inovelliLight, ''brightness'') /
+          2.55) }}
+
+          '
+        minBrightness: !input min_brightness
+        targetBrightnessPct: '{{ (((100 - minBrightness) / 100 ) * inovelliLightBrightness
+          + minBrightness ) | round(0) }}
+
+          '
+        brightnessSyncEnabled: !input brightness_sync
+    - choose:
+      - conditions: '{{ inovelliLightBrightness != 0 }}'
+        sequence:
+        - action: light.turn_on
+          metadata: {}
+          data:
+            brightness_pct: '{{ targetBrightnessPct }}'
+          target:
+            entity_id: !input target_light
+- if:
+  - condition: template
+    value_template: '{{ targetFan != [] }}'
+  - condition: trigger
+    id:
+    - config
+  then:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: !input entity_config
+        attribute: event_type
+        state: multi_press_1
+      sequence:
+      - action: fan.turn_on
+        data:
+          percentage: 33
+        target:
+          entity_id: !input target_fan
+    - conditions:
+      - condition: state
+        entity_id: !input entity_config
+        attribute: event_type
+        state: multi_press_2
+      sequence:
+      - action: fan.turn_on
+        data:
+          percentage: 66
+        target:
+          entity_id: !input target_fan
+    - conditions:
+      - condition: state
+        entity_id: !input entity_config
+        attribute: event_type
+        state: multi_press_3
+      sequence:
+      - action: fan.turn_on
+        data:
+          percentage: 100
+        target:
+          entity_id: !input target_fan
+    - conditions:
+      - condition: state
+        entity_id: !input entity_config
+        attribute: event_type
+        state: long_press
+      sequence:
+      - action: fan.turn_off
+        target:
+          entity_id: !input target_fan

@@ -1,0 +1,590 @@
+blueprint:
+  name: Trigger - Run ON Timer
+  description: "# ⏱️ Trigger - Run ON Timer\n**Version: 1.9**\n\nPerfect Timing for
+    Every Trigger Event!\U0001F3AF\n\n**If you like my blueprints, and would like
+    to show your support or just say thank you?** [Click Here](https://www.paypal.com/donate/?hosted_button_id=WAZS3QSDTPGA8)
+    \U0001F642\n\n<details> <summary><b>The Automation Process:</b> \U0001F448</summary>\n\n
+    \ When a trigger is activated, it turns the selected entities ON and then OFF
+    automatically after a pre-set time period.\n\n  - **Multiple Triggers:**\n\n    -
+    You can set up to 4 different triggers, each with its own specified duration period.\n
+    \   - Additionally, you can configure an extra trigger that increments the timer's
+    remaining time by a specified duration every time the button helper is pressed.
+    This extra trigger can be used alone or in combination with the other 4 triggers.\n\n
+    \ - **Reset on Re-activation:**\n\n    - If a trigger is activated again before
+    the time delay expires, the entities will stay ON and the time delay will be reset
+    based on the last trigger event.\n\n  - **Timer Helper Option:**\n\n    - You
+    have the option to use a timer helper. This is useful for displaying the remaining
+    time on a dashboard and ensures the timer survives a Home Assistant restart.\n\n
+    \ - **HA Restart Behaviour:**\n    - **With Timer Helper:** The timer will resume
+    as if nothing happened, which is recommended for continuity.\n    - **Without
+    Timer Helper:** The automation will attempt to reset to the start of Trigger 1
+    upon restart.\n</details>\n\nNeed help? \n- FAQ: [Click Here](https://community.home-assistant.io/t/485176/49)\n-
+    Community Support Including Updates: [Click Here](https://community.home-assistant.io/t/485176)\n\nRequired
+    = *\n"
+  domain: automation
+  input:
+    settings:
+      name: Settings *
+      icon: mdi:cog-outline
+      collapsed: true
+      input:
+        trigger_state:
+          name: The Trigger State *
+          description: 'You have 4 triggers in this blueprint that starts a timer
+            helper (if enabled below) or a built-in time delay. Select the state the
+            trigger must be in to run the automation.
+
+            '
+          default: 'on'
+          selector:
+            select:
+              options:
+              - label: Turn ON State
+                value: 'on'
+              - label: Turn OFF State
+                value: 'off'
+              - label: Any State Change - Example Button Helper
+                value: state
+              multiple: false
+              custom_value: false
+              sort: false
+        include_timer_helper:
+          name: Use The Timer Helper Options (Optional)
+          description: 'Enable this option if you would like to use a timer helper.
+            Using a timer helper provides flexibility to start, pause, and cancel
+            timers, persistence across reboots, and real-time monitoring, making your
+            automations more robust and adaptable.
+
+
+            For more information on how to create a timer helper [Click Here](https://community.home-assistant.io/t/485176/50?u=blacky)
+
+            '
+          default: disable_timer_helper
+          selector:
+            select:
+              options:
+              - label: Use a timer helper
+                value: enable_timer_helper
+              - label: Dont use a timer helper
+                value: disable_timer_helper
+              multiple: false
+              custom_value: false
+              sort: false
+        timer_helper:
+          name: Timer Helper
+          description: 'Select the timer helper to be used if you have chosen to enable
+            a timer helper above.
+
+            '
+          default: []
+          selector:
+            entity:
+              filter:
+              - domain:
+                - timer
+              multiple: false
+              reorder: false
+        entity_input:
+          name: Entities To Turn ON *
+          description: 'Specify the entities that will be turned ON by the triggers
+            and OFF after the set duration.
+
+            '
+          default: []
+          selector:
+            target: {}
+    triggers:
+      name: Triggers
+      icon: mdi:cog-play-outline
+      collapsed: true
+      input:
+        trigger_one:
+          name: Trigger One
+          description: 'Select the entity that will turn on your chosen entities and
+            start **Timer Duration One**. The timer helper (if enabled above) or the
+            built-in time delay will turn off your selected entities once the duration
+            completes.
+
+
+            **Example of a trigger entity:** Button Helper, Motion Sensor, Light,
+            Switch, etc.
+
+
+            Note that this entity cannot be used in other triggers.
+
+            '
+          default: []
+          selector:
+            entity:
+              multiple: true
+              reorder: false
+        trigger_one_time:
+          name: Timer Duration One
+          description: 'Set the duration for Trigger One. This defines how long the
+            timer helper (if enabled above) or the built-in time delay will run.
+
+            '
+          default: 00:00:00
+          selector:
+            duration:
+              enable_second: true
+        include_extra_triggers:
+          name: Use The Extra Triggers (Optional)
+          description: 'Select any additional triggers you want to include. These
+            triggers can be used to set different timer durations, allowing you to
+            have various preset durations for your **Entities To Turn ON**.
+
+            '
+          default: []
+          selector:
+            select:
+              multiple: true
+              options:
+              - label: Use Trigger Two
+                value: use_trigger_two
+              - label: Use Trigger Three
+                value: use_trigger_three
+              - label: Use Trigger Four
+                value: use_trigger_four
+              - label: Use Trigger Five - Increment Duration
+                value: use_trigger_five
+              custom_value: false
+              sort: false
+        trigger_two:
+          name: Trigger Two
+          description: 'Select the entity that will turn on your chosen entities and
+            start **Timer Duration Two**. The timer helper (if enabled above) or the
+            built-in time delay will turn off your selected entities once the duration
+            completes.
+
+
+            **Example of a trigger entity:** Button Helper, Motion Sensor, Light,
+            Switch, etc.
+
+
+            Note that this entity cannot be used in other triggers.
+
+            '
+          default: []
+          selector:
+            entity:
+              multiple: true
+              reorder: false
+        trigger_two_time:
+          name: Timer Duration Two
+          description: 'Set the duration for Trigger Two. This defines how long the
+            timer helper (if enabled above) or the built-in time delay will run..
+
+            '
+          default: 00:00:00
+          selector:
+            duration:
+              enable_second: true
+        trigger_three:
+          name: Trigger Three
+          description: 'Select the entity that will turn on your chosen entities and
+            start **Timer Duration Three**. The timer helper (if enabled above) or
+            the built-in time delay will turn off your selected entities once the
+            duration completes.
+
+
+            **Example of a trigger entity:** Button Helper, Motion Sensor, Light,
+            Switch, etc.
+
+
+            Note that this entity cannot be used in other triggers.
+
+            '
+          default: []
+          selector:
+            entity:
+              multiple: true
+              reorder: false
+        trigger_three_time:
+          name: Timer Duration Three
+          description: 'Set the duration for Trigger Three. This defines how long
+            the timer helper (if enabled above) or the built-in time delay will run.
+
+            '
+          default: 00:00:00
+          selector:
+            duration:
+              enable_second: true
+        trigger_four:
+          name: Trigger Four
+          description: 'Select the entity that will turn on your chosen entities and
+            start **Timer Duration Four**. The timer helper (if enabled above) or
+            the built-in time delay will turn off your selected entities once the
+            duration completes.
+
+
+            **Example of a trigger entity:** Button Helper, Motion Sensor, Light,
+            Switch, etc.
+
+
+            Note that this entity cannot be used in other triggers.
+
+            '
+          default: []
+          selector:
+            entity:
+              multiple: true
+              reorder: false
+        trigger_four_time:
+          name: Timer Duration Four
+          description: 'Set the duration for Trigger Four. This defines how long the
+            timer helper (if enabled above) or the built-in time delay will run.
+
+            '
+          default: 00:00:00
+          selector:
+            duration:
+              enable_second: true
+        trigger_five:
+          name: Trigger Five - Increment Duration
+          description: 'This input is designed to work exclusively with the **Timer
+            Helper** option and a **Button Helper** as the trigger. Every time the
+            button helper is pressed, it increments the timer''s remaining time by
+            a specified duration set in the **Increment Duration** (e.g., 15 minutes).
+            The value is dynamically added to the timer''s remaining time, ensuring
+            the timer''s duration continues to increase with each press of the button
+            helper.
+
+
+            This input is ideal for scenarios where you need to extend the timer’s
+            duration repeatedly, such as when additional time is required for tasks,
+            without resetting the timer completely.
+
+
+            **Example of a trigger entity:** Button Helper ONLY
+
+
+            Note that this entity cannot be used in other triggers.
+
+            '
+          default: []
+          selector:
+            entity:
+              filter:
+              - domain:
+                - input_button
+              multiple: false
+              reorder: false
+        trigger_five_time:
+          name: Increment Duration
+          description: 'Set the increment duration for Trigger Five. This defines
+            how much duration will be added to the timer every time the button helper
+            is pressed.
+
+            This input allows you to specify the duration to extend the timer each
+            time the button is pressed (e.g., 15 minutes, 30 minutes). The value will
+            be added to the timer''s remaining time, allowing you to extend the timer
+            without resetting it.
+
+            '
+          default: 00:00:00
+          selector:
+            duration:
+              enable_second: true
+  source_url: https://gist.github.com/Blackshome/495198096386f0db2cdaf91c0bda50ea
+mode: restart
+max_exceeded: silent
+variables:
+  trigger_state: !input trigger_state
+  include_timer_helper: !input include_timer_helper
+  timer_helper: !input timer_helper
+  entity_input: !input entity_input
+  trigger_one: !input trigger_one
+  trigger_one_time: !input trigger_one_time
+  include_extra_triggers: !input include_extra_triggers
+  trigger_two: !input trigger_two
+  trigger_two_time: !input trigger_two_time
+  trigger_three: !input trigger_three
+  trigger_three_time: !input trigger_three_time
+  trigger_four: !input trigger_four
+  trigger_four_time: !input trigger_four_time
+  trigger_five: !input trigger_five
+  trigger_five_time: !input trigger_five_time
+triggers:
+- trigger: state
+  entity_id: !input trigger_one
+  to: !input trigger_state
+  id: t1_to_state
+- trigger: state
+  entity_id: !input trigger_one
+  id: t1_no_state
+- trigger: state
+  entity_id: !input trigger_two
+  to: !input trigger_state
+  id: t2_to_state
+- trigger: state
+  entity_id: !input trigger_two
+  id: t2_no_state
+- trigger: state
+  entity_id: !input trigger_three
+  to: !input trigger_state
+  id: t3_to_state
+- trigger: state
+  entity_id: !input trigger_three
+  id: t3_no_state
+- trigger: state
+  entity_id: !input trigger_four
+  to: !input trigger_state
+  id: t4_to_state
+- trigger: state
+  entity_id: !input trigger_four
+  id: t4_no_state
+- trigger: state
+  entity_id: !input trigger_five
+  id: t5_no_state
+- trigger: state
+  entity_id: !input timer_helper
+  to: idle
+  id: t6
+- trigger: homeassistant
+  id: t7
+  event: start
+condition:
+- condition: or
+  conditions:
+  - condition: and
+    conditions:
+    - '{{ (trigger_state == ''on'') or (trigger_state == ''off'') }}'
+    - condition: trigger
+      id:
+      - t1_to_state
+  - condition: and
+    conditions:
+    - '{{ (trigger_state == ''on'') or (trigger_state == ''off'') }}'
+    - condition: trigger
+      id: t2_to_state
+    - '{{ ''use_trigger_two'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - '{{ (trigger_state == ''on'') or (trigger_state == ''off'') }}'
+    - condition: trigger
+      id: t3_to_state
+    - '{{ ''use_trigger_three'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - '{{ (trigger_state == ''on'') or (trigger_state == ''off'') }}'
+    - condition: trigger
+      id: t4_to_state
+    - '{{ ''use_trigger_four'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - '{{ trigger_state == ''state'' }}'
+    - condition: trigger
+      id:
+      - t1_no_state
+  - condition: and
+    conditions:
+    - '{{ trigger_state == ''state'' }}'
+    - condition: trigger
+      id: t2_no_state
+    - '{{ ''use_trigger_two'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - '{{ trigger_state == ''state'' }}'
+    - condition: trigger
+      id: t3_no_state
+    - '{{ ''use_trigger_three'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - '{{ trigger_state == ''state'' }}'
+    - condition: trigger
+      id: t4_no_state
+    - '{{ ''use_trigger_four'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - '{{ trigger_state == ''state'' }}'
+    - condition: trigger
+      id: t5_no_state
+    - '{{ ''use_trigger_five'' in include_extra_triggers }}'
+  - condition: and
+    conditions:
+    - condition: trigger
+      id: t6
+    - '{{include_timer_helper == ''enable_timer_helper''}}'
+    - '{{ expand(entity_input.entity_id) | selectattr(''state'', ''=='', ''on'') |
+      list | count > 0 }}'
+  - condition: and
+    conditions:
+    - condition: trigger
+      id: t7
+    - '{{include_timer_helper == ''disable_timer_helper''}}'
+    - '{{ expand(entity_input.entity_id) | selectattr(''state'', ''=='', ''on'') |
+      list | count > 0 }}'
+action:
+- choose:
+  - alias: Check if the time helper is enabled
+    conditions:
+    - '{{include_timer_helper == ''enable_timer_helper''}}'
+    - '{{ timer_helper | length > 0 }}'
+    - condition: trigger
+      id:
+      - t1_to_state
+      - t2_to_state
+      - t3_to_state
+      - t4_to_state
+      - t1_no_state
+      - t2_no_state
+      - t3_no_state
+      - t4_no_state
+      - t5_no_state
+    sequence:
+    - alias: Turn ON the entities
+      action: homeassistant.turn_on
+      target: !input entity_input
+    - choose:
+      - alias: For trigger one with a time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t1_to_state
+          - t1_no_state
+        sequence:
+        - alias: Turn ON the timer helper
+          action: timer.start
+          entity_id: !input timer_helper
+          data:
+            duration: !input trigger_one_time
+      - alias: For trigger two with a time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t2_to_state
+          - t2_no_state
+        sequence:
+        - alias: Turn ON the timer helper
+          action: timer.start
+          entity_id: !input timer_helper
+          data:
+            duration: !input trigger_two_time
+      - alias: For trigger three with a time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t3_to_state
+          - t3_no_state
+        sequence:
+        - alias: Turn ON the timer helper
+          action: timer.start
+          entity_id: !input timer_helper
+          data:
+            duration: !input trigger_three_time
+      - alias: For trigger four with a time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t4_to_state
+          - t4_no_state
+        sequence:
+        - alias: Turn ON the timer helper
+          action: timer.start
+          entity_id: !input timer_helper
+          data:
+            duration: !input trigger_four_time
+      - alias: For trigger five with a time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t5_no_state
+        sequence:
+        - alias: Get Timer Finish Time
+          variables:
+            finish_time: '{{ state_attr(timer_helper, ''finishes_at'') }}'
+            current_time: '{{ now() }}'
+            remaining_time: "{% if finish_time %}\n  {% set finish = as_datetime(finish_time)
+              %}\n  {% set current = as_datetime(current_time) %}\n  {% set remaining
+              = finish - current %}\n  {{ remaining.total_seconds() | int }}\n{% else
+              %}\n  0\n{% endif %}\n"
+        - alias: Convert Increment Time to Seconds
+          variables:
+            increment_time: "{% if trigger_five_time is mapping %}\n  {{ trigger_five_time.hours
+              * 3600 + trigger_five_time.minutes * 60 + trigger_five_time.seconds
+              }}\n{% else %}\n  0\n{% endif %}\n"
+        - alias: Calculate New Total Duration
+          variables:
+            total_duration: '{{ remaining_time + increment_time }}'
+        - alias: Restart Timer with New Total Duration
+          action: timer.start
+          entity_id: !input timer_helper
+          data:
+            duration: '{{ total_duration }}'
+  - alias: Check if the time helper is disabled
+    conditions:
+    - '{{include_timer_helper == ''disable_timer_helper''}}'
+    - condition: trigger
+      id:
+      - t1_to_state
+      - t2_to_state
+      - t3_to_state
+      - t4_to_state
+      - t1_no_state
+      - t2_no_state
+      - t3_no_state
+      - t4_no_state
+    sequence:
+    - alias: Turn ON the entities
+      action: homeassistant.turn_on
+      target: !input entity_input
+    - choose:
+      - alias: For trigger one with a no time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t1_to_state
+          - t1_no_state
+        sequence:
+        - alias: Wait for the time that has been set
+          delay: !input trigger_one_time
+      - alias: For trigger two with a no time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t2_to_state
+          - t2_no_state
+        sequence:
+        - alias: Wait for the time that has been set
+          delay: !input trigger_two_time
+      - alias: For trigger three with a no time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t3_to_state
+          - t3_no_state
+        sequence:
+        - alias: Wait for the time that has been set
+          delay: !input trigger_three_time
+      - alias: For trigger four with a no time helper
+        conditions:
+        - condition: trigger
+          id:
+          - t4_to_state
+          - t4_no_state
+        sequence:
+        - alias: Wait for the time that has been set
+          delay: !input trigger_four_time
+    - alias: Turn OFF the entities
+      action: homeassistant.turn_off
+      target: !input entity_input
+  - alias: Turn OFF entities after the timer helper is finished
+    conditions:
+    - condition: trigger
+      id:
+      - t6
+    sequence:
+    - alias: Turn OFF the entities
+      action: homeassistant.turn_off
+      target: !input entity_input
+  - alias: HA Restart
+    conditions:
+    - condition: trigger
+      id: t7
+    sequence:
+    - alias: Wait for the time that has been setin trigger one time
+      delay: !input trigger_one_time
+    - alias: Turn OFF the entities
+      action: homeassistant.turn_off
+      target: !input entity_input
