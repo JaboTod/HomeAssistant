@@ -1,0 +1,94 @@
+blueprint:
+  name: CO/Smoke Safety Response
+  description: >
+    When any CO or smoke detector goes into alarm: sets the given light(s) to
+    full brightness bright white, unlocks the given lock (clear exit path),
+    and turns off the given climate entity (avoid feeding a fire/spreading
+    CO through ductwork).
+
+    Deliberately does NOT restore previous state afterward and has NO
+    override/disable condition - unlike a convenience automation, a safety
+    response like this should stay simple to reason about and hard to
+    accidentally suppress. Reset lights/locks/HVAC manually once the alarm
+    is confirmed clear.
+  domain: automation
+  input:
+    sensors:
+      name: Sensors
+      icon: mdi:smoke-detector
+      input:
+        alarm_sensors:
+          name: CO / smoke alarm sensors
+          description: Any binary_sensor that goes "on" when in alarm (smoke or carbon_monoxide device class).
+          selector:
+            entity:
+              domain: binary_sensor
+              multiple: true
+    response:
+      name: Response
+      icon: mdi:alert
+      input:
+        target_lights:
+          name: Light(s) to set bright white
+          selector:
+            target:
+              entity:
+                domain: light
+        brightness:
+          name: Brightness
+          default: 100
+          selector:
+            number: { min: 1, max: 100, unit_of_measurement: "%" }
+        color_temp_kelvin:
+          name: White color temperature
+          description: >
+            Sent as color_temp_kelvin (each light's native "how white" control),
+            not rgb_color - tunable-white fixtures render noticeably warmer/dimmer
+            when forced to fake white via RGB/HS saturation=0 than when driven
+            natively via color temperature. HA still converts this reasonably
+            for genuinely RGB-only fixtures.
+          default: 6500
+          selector:
+            number: { min: 2000, max: 6500, unit_of_measurement: K }
+        front_door_lock:
+          name: Lock to unlock
+          selector:
+            entity:
+              domain: lock
+        climate_entity:
+          name: Climate entity to turn off
+          selector:
+            entity:
+              domain: climate
+
+mode: single
+
+variables:
+  brightness_pct: !input brightness
+  color_temp_kelvin: !input color_temp_kelvin
+
+triggers:
+  - trigger: state
+    entity_id: !input alarm_sensors
+    to: "on"
+
+conditions: []
+
+actions:
+  - action: light.turn_on
+    target: !input target_lights
+    data:
+      color_temp_kelvin: "{{ color_temp_kelvin }}"
+      brightness_pct: "{{ brightness_pct }}"
+    note: >
+      Full brightness, bright white via each light's native color-temperature
+      control (not RGB/HS saturation=0, which renders warmer/dimmer on
+      tunable-white fixtures). HA converts reasonably for RGB-only lights.
+  - action: lock.unlock
+    target:
+      entity_id: !input front_door_lock
+    note: Clear an exit path. If this is a group covering multiple physical locks, all of them unlock.
+  - action: climate.turn_off
+    target:
+      entity_id: !input climate_entity
+    note: Don't keep circulating air through a fire or CO source.

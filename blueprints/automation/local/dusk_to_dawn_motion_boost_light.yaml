@@ -1,0 +1,173 @@
+blueprint:
+  name: Dusk-to-Dawn Light with Motion Boost
+  description: >
+    Turns light(s) on at dusk (a configurable offset before sunset) at a
+    baseline color/temperature and brightness, and off at dawn (a
+    configurable offset after sunrise). While the light(s) are on for the
+    night, motion on an optional motion sensor temporarily boosts
+    brightness, then dims back down to the baseline brightness after a set
+    duration once motion stops re-triggering it.
+
+    Built for exterior/porch lighting that should stay on low overnight and
+    brighten when someone approaches.
+  domain: automation
+  input:
+    devices:
+      name: Devices
+      icon: mdi:lightbulb-outline
+      input:
+        target_light:
+          name: Light(s)
+          description: The exterior light(s) to control.
+          selector:
+            entity:
+              domain: light
+              multiple: true
+        motion_sensor:
+          name: Motion sensor(s) (optional)
+          description: >
+            Optional. Motion on any of these while the light(s) are on for
+            the night boosts brightness temporarily. Leave empty to disable
+            the motion boost — the light(s) will just hold the baseline
+            brightness all night.
+          default: []
+          selector:
+            entity:
+              domain: binary_sensor
+              device_class: motion
+              multiple: true
+    schedule:
+      name: Schedule
+      icon: mdi:sun-clock
+      input:
+        sunset_offset:
+          name: Minutes before sunset to turn on
+          description: Enter as a negative number (e.g. -30 for 30 minutes before sunset). The sun trigger's offset must be negative to fire before the event.
+          default: -30
+          selector:
+            number: { min: -180, max: 0, step: 5, unit_of_measurement: minutes, mode: slider }
+        sunrise_offset:
+          name: Minutes after sunrise to turn off
+          default: 30
+          selector:
+            number: { min: 0, max: 180, step: 5, unit_of_measurement: minutes, mode: slider }
+    lighting:
+      name: Baseline Lighting
+      icon: mdi:palette
+      input:
+        color_mode:
+          name: Color mode
+          description: Whether the baseline color below is a color temperature or an RGB color.
+          default: color_temp
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: Color temperature, value: color_temp }
+                - { label: RGB color, value: rgb }
+        color_temp_kelvin:
+          name: Baseline color temperature
+          default: 2700
+          selector:
+            number: { min: 2000, max: 6500, step: 50, unit_of_measurement: K, mode: slider }
+        rgb_color:
+          name: Baseline RGB color
+          description: Only used when Color mode above is set to RGB color.
+          default: [255, 168, 87]
+          selector:
+            color_rgb: {}
+        baseline_brightness:
+          name: Baseline brightness
+          default: 30
+          selector:
+            number: { min: 1, max: 100, unit_of_measurement: "%", mode: slider }
+    motion_boost:
+      name: Motion Boost
+      icon: mdi:motion-sensor
+      collapsed: true
+      input:
+        boost_brightness:
+          name: Boost brightness
+          default: 100
+          selector:
+            number: { min: 1, max: 100, unit_of_measurement: "%", mode: slider }
+        boost_duration:
+          name: Boost duration
+          description: How long to hold the boosted brightness after motion before dimming back to baseline.
+          default: 5
+          selector:
+            number: { min: 1, max: 60, unit_of_measurement: minutes, mode: slider }
+
+mode: restart
+max_exceeded: silent
+
+variables:
+  target_lights: !input target_light
+  color_mode: !input color_mode
+  color_temp_kelvin: !input color_temp_kelvin
+  rgb_color: !input rgb_color
+  baseline_brightness: !input baseline_brightness
+  boost_brightness: !input boost_brightness
+
+triggers:
+  - trigger: sun
+    event: sunset
+    offset:
+      minutes: !input sunset_offset
+    id: dusk
+    note: Fires the configured number of minutes before actual sunset (offset is negative).
+  - trigger: sun
+    event: sunrise
+    offset:
+      minutes: !input sunrise_offset
+    id: dawn
+    note: Fires the configured number of minutes after actual sunrise.
+  - trigger: state
+    entity_id: !input motion_sensor
+    to: "on"
+    id: motion
+    note: Inert (never fires) when no motion sensor is configured — entity_id resolves to an empty list.
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: dusk
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ target_lights }}"
+            data: "{{ {'brightness_pct': baseline_brightness, 'color_temp_kelvin': color_temp_kelvin} if color_mode == 'color_temp' else {'brightness_pct': baseline_brightness, 'rgb_color': rgb_color} }}"
+        note: Turn on at baseline color/brightness ahead of sunset.
+      - conditions:
+          - condition: trigger
+            id: dawn
+        sequence:
+          - action: light.turn_off
+            target:
+              entity_id: "{{ target_lights }}"
+        note: Turn off after sunrise.
+      - conditions:
+          - condition: trigger
+            id: motion
+          - "{{ target_lights | select('is_state', 'on') | list | length > 0 }}"
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ target_lights }}"
+            data:
+              brightness_pct: "{{ boost_brightness }}"
+            note: Boost brightness only — color is left as-is.
+          - delay:
+              minutes: !input boost_duration
+          - action: light.turn_on
+            target:
+              entity_id: "{{ target_lights }}"
+            data:
+              brightness_pct: "{{ baseline_brightness }}"
+            note: Dim back to baseline brightness once the boost period elapses uninterrupted.
+    note: >
+      The motion condition also requires the light(s) already be on, so
+      motion during the day (when the schedule has them off) is ignored.
+      mode: restart means fresh motion during the boost/delay restarts the
+      timer instead of stacking runs.
