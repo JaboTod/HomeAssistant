@@ -1,0 +1,1326 @@
+blueprint:
+  name: Rosey Scheduled Room Clean
+  description: >
+    Runs the Narwal vacuum/mop through a specific ordered set of rooms on a
+    recurring schedule, with every cleaning option (mode, suction, water,
+    mop strength, passes, route) customizable independently per room in
+    the run. Rooms are cleaned strictly in the order given (Room 1 first,
+    then Room 2, ...), waiting for each room to finish before starting the
+    next. Unused room slots are left at "(Skip this slot)".
+
+    Create one automation per desired run (e.g. "Rosey - Weekday Morning",
+    "Rosey - Weekend Deep Clean") to support multiple runs per day or
+    different room sets on different days.
+  domain: automation
+  input:
+    vacuum_entity:
+      name: Vacuum
+      description: The Narwal vacuum entity to control.
+      selector:
+        entity:
+          domain: vacuum
+          integration: narwal
+    schedule:
+      name: Schedule
+      icon: mdi:calendar-clock
+      input:
+        run_time:
+          name: Time
+          default: "09:00:00"
+          selector:
+            time: {}
+        run_days:
+          name: Days
+          description: Days of the week this run should fire.
+          default: [mon, tue, wed, thu, fri, sat, sun]
+          selector:
+            select:
+              multiple: true
+              mode: list
+              options:
+                - { label: Monday, value: mon }
+                - { label: Tuesday, value: tue }
+                - { label: Wednesday, value: wed }
+                - { label: Thursday, value: thu }
+                - { label: Friday, value: fri }
+                - { label: Saturday, value: sat }
+                - { label: Sunday, value: sun }
+    room_1:
+      name: Room 1
+      icon: mdi:numeric-1-circle-outline
+      collapsed: false
+      input:
+        room_1_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_1_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_1_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_1_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_1_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_1_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_1_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_2:
+      name: Room 2
+      icon: mdi:numeric-2-circle-outline
+      collapsed: true
+      input:
+        room_2_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_2_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_2_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_2_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_2_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_2_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_2_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_3:
+      name: Room 3
+      icon: mdi:numeric-3-circle-outline
+      collapsed: true
+      input:
+        room_3_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_3_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_3_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_3_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_3_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_3_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_3_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_4:
+      name: Room 4
+      icon: mdi:numeric-4-circle-outline
+      collapsed: true
+      input:
+        room_4_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_4_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_4_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_4_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_4_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_4_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_4_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_5:
+      name: Room 5
+      icon: mdi:numeric-5-circle-outline
+      collapsed: true
+      input:
+        room_5_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_5_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_5_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_5_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_5_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_5_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_5_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_6:
+      name: Room 6
+      icon: mdi:numeric-6-circle-outline
+      collapsed: true
+      input:
+        room_6_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_6_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_6_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_6_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_6_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_6_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_6_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_7:
+      name: Room 7
+      icon: mdi:numeric-7-circle-outline
+      collapsed: true
+      input:
+        room_7_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_7_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_7_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_7_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_7_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_7_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_7_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_8:
+      name: Room 8
+      icon: mdi:numeric-8-circle-outline
+      collapsed: true
+      input:
+        room_8_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_8_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_8_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_8_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_8_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_8_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_8_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_9:
+      name: Room 9
+      icon: mdi:numeric-9-circle-outline
+      collapsed: true
+      input:
+        room_9_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_9_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_9_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_9_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_9_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_9_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_9_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_10:
+      name: Room 10
+      icon: mdi:numeric-9-plus-circle-outline
+      collapsed: true
+      input:
+        room_10_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_10_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_10_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_10_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_10_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_10_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_10_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_11:
+      name: Room 11
+      icon: mdi:numeric-9-plus-circle-outline
+      collapsed: true
+      input:
+        room_11_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_11_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_11_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_11_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_11_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_11_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_11_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_12:
+      name: Room 12
+      icon: mdi:numeric-9-plus-circle-outline
+      collapsed: true
+      input:
+        room_12_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_12_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_12_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_12_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_12_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_12_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_12_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_13:
+      name: Room 13
+      icon: mdi:numeric-9-plus-circle-outline
+      collapsed: true
+      input:
+        room_13_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_13_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_13_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_13_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_13_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_13_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_13_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+    room_14:
+      name: Room 14
+      icon: mdi:numeric-9-plus-circle-outline
+      collapsed: true
+      input:
+        room_14_room:
+          name: Room
+          description: Which room to clean in this step. Leave as "(Skip this slot)" if this run has fewer than 12 rooms.
+          default: "0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - { label: "(Skip this slot)", value: "0" }
+                - { label: "Kitchen", value: "1" }
+                - { label: "Master Bedroom", value: "2" }
+                - { label: "Jason Office", value: "3" }
+                - { label: "Master Bathroom", value: "4" }
+                - { label: "Corridor 2", value: "5" }
+                - { label: "Mudroom", value: "6" }
+                - { label: "Guest Bathroom", value: "7" }
+                - { label: "Guest Bedroom", value: "8" }
+                - { label: "Alexia Closet", value: "9" }
+                - { label: "Corridor", value: "10" }
+                - { label: "Jason Closet", value: "11" }
+                - { label: "Master WC", value: "12" }
+                - { label: "Sitting Room", value: "13" }
+                - { label: "Living Room", value: "14" }
+        room_14_mode:
+          name: Clean mode
+          default: vacuum_and_mop
+          selector:
+            select:
+              options:
+                - { label: "Vacuum only", value: vacuum }
+                - { label: "Mop only", value: mop }
+                - { label: "Vacuum then mop", value: vacuum_then_mop }
+                - { label: "Vacuum and mop together", value: vacuum_and_mop }
+        room_14_suction:
+          name: Suction
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "AI (adaptive)", value: ai }
+                - { label: "Quiet", value: quiet }
+                - { label: "Standard", value: standard }
+                - { label: "Strong", value: strong }
+                - { label: "Super Powerful", value: super_powerful }
+                - { label: "Ultra Powerful", value: ultra_powerful }
+        room_14_water:
+          name: Water level
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Dry", value: dry }
+                - { label: "Normal", value: normal }
+                - { label: "Wet", value: wet }
+        room_14_mop_strength:
+          name: Mop scrub strength
+          default: normal
+          selector:
+            select:
+              options:
+                - { label: "Normal", value: normal }
+                - { label: "High", value: high }
+        room_14_passes:
+          name: Passes
+          default: 1
+          selector:
+            number: { min: 1, max: 3, step: 1, mode: box }
+        room_14_route:
+          name: Route
+          default: standard
+          selector:
+            select:
+              options:
+                - { label: "Standard", value: standard }
+                - { label: "Meticulous", value: meticulous }
+
+mode: single
+max_exceeded: silent
+
+variables:
+  room_1: !input room_1_room
+  room_1_mode: !input room_1_mode
+  room_1_suction: !input room_1_suction
+  room_1_water: !input room_1_water
+  room_1_mop_strength: !input room_1_mop_strength
+  room_1_passes: !input room_1_passes
+  room_1_route: !input room_1_route
+  room_2: !input room_2_room
+  room_2_mode: !input room_2_mode
+  room_2_suction: !input room_2_suction
+  room_2_water: !input room_2_water
+  room_2_mop_strength: !input room_2_mop_strength
+  room_2_passes: !input room_2_passes
+  room_2_route: !input room_2_route
+  room_3: !input room_3_room
+  room_3_mode: !input room_3_mode
+  room_3_suction: !input room_3_suction
+  room_3_water: !input room_3_water
+  room_3_mop_strength: !input room_3_mop_strength
+  room_3_passes: !input room_3_passes
+  room_3_route: !input room_3_route
+  room_4: !input room_4_room
+  room_4_mode: !input room_4_mode
+  room_4_suction: !input room_4_suction
+  room_4_water: !input room_4_water
+  room_4_mop_strength: !input room_4_mop_strength
+  room_4_passes: !input room_4_passes
+  room_4_route: !input room_4_route
+  room_5: !input room_5_room
+  room_5_mode: !input room_5_mode
+  room_5_suction: !input room_5_suction
+  room_5_water: !input room_5_water
+  room_5_mop_strength: !input room_5_mop_strength
+  room_5_passes: !input room_5_passes
+  room_5_route: !input room_5_route
+  room_6: !input room_6_room
+  room_6_mode: !input room_6_mode
+  room_6_suction: !input room_6_suction
+  room_6_water: !input room_6_water
+  room_6_mop_strength: !input room_6_mop_strength
+  room_6_passes: !input room_6_passes
+  room_6_route: !input room_6_route
+  room_7: !input room_7_room
+  room_7_mode: !input room_7_mode
+  room_7_suction: !input room_7_suction
+  room_7_water: !input room_7_water
+  room_7_mop_strength: !input room_7_mop_strength
+  room_7_passes: !input room_7_passes
+  room_7_route: !input room_7_route
+  room_8: !input room_8_room
+  room_8_mode: !input room_8_mode
+  room_8_suction: !input room_8_suction
+  room_8_water: !input room_8_water
+  room_8_mop_strength: !input room_8_mop_strength
+  room_8_passes: !input room_8_passes
+  room_8_route: !input room_8_route
+  room_9: !input room_9_room
+  room_9_mode: !input room_9_mode
+  room_9_suction: !input room_9_suction
+  room_9_water: !input room_9_water
+  room_9_mop_strength: !input room_9_mop_strength
+  room_9_passes: !input room_9_passes
+  room_9_route: !input room_9_route
+  room_10: !input room_10_room
+  room_10_mode: !input room_10_mode
+  room_10_suction: !input room_10_suction
+  room_10_water: !input room_10_water
+  room_10_mop_strength: !input room_10_mop_strength
+  room_10_passes: !input room_10_passes
+  room_10_route: !input room_10_route
+  room_11: !input room_11_room
+  room_11_mode: !input room_11_mode
+  room_11_suction: !input room_11_suction
+  room_11_water: !input room_11_water
+  room_11_mop_strength: !input room_11_mop_strength
+  room_11_passes: !input room_11_passes
+  room_11_route: !input room_11_route
+  room_12: !input room_12_room
+  room_12_mode: !input room_12_mode
+  room_12_suction: !input room_12_suction
+  room_12_water: !input room_12_water
+  room_12_mop_strength: !input room_12_mop_strength
+  room_12_passes: !input room_12_passes
+  room_12_route: !input room_12_route
+  room_13: !input room_13_room
+  room_13_mode: !input room_13_mode
+  room_13_suction: !input room_13_suction
+  room_13_water: !input room_13_water
+  room_13_mop_strength: !input room_13_mop_strength
+  room_13_passes: !input room_13_passes
+  room_13_route: !input room_13_route
+  room_14: !input room_14_room
+  room_14_mode: !input room_14_mode
+  room_14_suction: !input room_14_suction
+  room_14_water: !input room_14_water
+  room_14_mop_strength: !input room_14_mop_strength
+  room_14_passes: !input room_14_passes
+  room_14_route: !input room_14_route
+
+triggers:
+  - trigger: time
+    at: !input run_time
+
+conditions:
+  - condition: time
+    weekday: !input run_days
+
+actions:
+  - variables:
+      steps: >
+        {% set raw = [
+        {'room': room_1, 'mode': room_1_mode, 'suction': room_1_suction, 'water': room_1_water, 'mop_strength': room_1_mop_strength, 'passes': room_1_passes, 'route': room_1_route},
+        {'room': room_2, 'mode': room_2_mode, 'suction': room_2_suction, 'water': room_2_water, 'mop_strength': room_2_mop_strength, 'passes': room_2_passes, 'route': room_2_route},
+        {'room': room_3, 'mode': room_3_mode, 'suction': room_3_suction, 'water': room_3_water, 'mop_strength': room_3_mop_strength, 'passes': room_3_passes, 'route': room_3_route},
+        {'room': room_4, 'mode': room_4_mode, 'suction': room_4_suction, 'water': room_4_water, 'mop_strength': room_4_mop_strength, 'passes': room_4_passes, 'route': room_4_route},
+        {'room': room_5, 'mode': room_5_mode, 'suction': room_5_suction, 'water': room_5_water, 'mop_strength': room_5_mop_strength, 'passes': room_5_passes, 'route': room_5_route},
+        {'room': room_6, 'mode': room_6_mode, 'suction': room_6_suction, 'water': room_6_water, 'mop_strength': room_6_mop_strength, 'passes': room_6_passes, 'route': room_6_route},
+        {'room': room_7, 'mode': room_7_mode, 'suction': room_7_suction, 'water': room_7_water, 'mop_strength': room_7_mop_strength, 'passes': room_7_passes, 'route': room_7_route},
+        {'room': room_8, 'mode': room_8_mode, 'suction': room_8_suction, 'water': room_8_water, 'mop_strength': room_8_mop_strength, 'passes': room_8_passes, 'route': room_8_route},
+        {'room': room_9, 'mode': room_9_mode, 'suction': room_9_suction, 'water': room_9_water, 'mop_strength': room_9_mop_strength, 'passes': room_9_passes, 'route': room_9_route},
+        {'room': room_10, 'mode': room_10_mode, 'suction': room_10_suction, 'water': room_10_water, 'mop_strength': room_10_mop_strength, 'passes': room_10_passes, 'route': room_10_route},
+        {'room': room_11, 'mode': room_11_mode, 'suction': room_11_suction, 'water': room_11_water, 'mop_strength': room_11_mop_strength, 'passes': room_11_passes, 'route': room_11_route},
+        {'room': room_12, 'mode': room_12_mode, 'suction': room_12_suction, 'water': room_12_water, 'mop_strength': room_12_mop_strength, 'passes': room_12_passes, 'route': room_12_route},
+        {'room': room_13, 'mode': room_13_mode, 'suction': room_13_suction, 'water': room_13_water, 'mop_strength': room_13_mop_strength, 'passes': room_13_passes, 'route': room_13_route},
+        {'room': room_14, 'mode': room_14_mode, 'suction': room_14_suction, 'water': room_14_water, 'mop_strength': room_14_mop_strength, 'passes': room_14_passes, 'route': room_14_route}
+        ] %}
+        {{ raw | rejectattr('room', 'equalto', '0') | list }}
+    note: Builds the ordered room-step list, dropping any slot left at "(Skip this slot)".
+  - repeat:
+      for_each: "{{ steps }}"
+      sequence:
+        - action: narwal.clean_rooms
+          target:
+            entity_id: !input vacuum_entity
+          data:
+            rooms: ["{{ repeat.item.room | int }}"]
+            mode: "{{ repeat.item.mode }}"
+            suction: "{{ repeat.item.suction }}"
+            water: "{{ repeat.item.water }}"
+            mop_strength: "{{ repeat.item.mop_strength }}"
+            passes: "{{ repeat.item.passes | int }}"
+            route: "{{ repeat.item.route }}"
+          note: Sends this room's own settings as a single-room clean command.
+        - wait_for_trigger:
+            - trigger: state
+              entity_id: !input vacuum_entity
+              attribute: task_status
+              from: cleaning
+          timeout: "02:00:00"
+          continue_on_timeout: true
+          note: Wait for Rosey to leave "cleaning" (finished, docked, or errored) before sending the next room, so rooms run strictly in order and commands never collide.
+        - delay:
+            seconds: 10
+    note: Runs each populated room slot in order, one at a time.
