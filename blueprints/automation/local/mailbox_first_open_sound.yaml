@@ -1,0 +1,84 @@
+blueprint:
+  name: Mailbox First Open Sound
+  description: >
+    Plays a sound on a speaker the first time the mailbox is opened each day.
+    It stays quiet if a chosen house door opened or closed in the last few
+    minutes, because that usually means someone went out to get the mail.
+
+
+    A skipped opening doesn't use up the day's sound, so if someone checks an
+    empty mailbox and the mail arrives later, the sound still plays. Current
+    music dips for the sound and then continues.
+  domain: automation
+  author: JaboTod
+  source_url: https://github.com/JaboTod/HomeAssistant/blob/main/blueprints/automation/local/mailbox_first_open_sound.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    mailbox_sensor:
+      name: Mailbox sensor
+      description: Door or contact sensor that turns on when the mailbox opens.
+      selector:
+        entity:
+          domain: binary_sensor
+    house_doors:
+      name: House doors
+      description: Doors someone uses to walk out to the mailbox.
+      selector:
+        entity:
+          domain: binary_sensor
+          multiple: true
+    door_quiet_minutes:
+      name: Door quiet time
+      description: Stay silent if any of these doors opened or closed within this many minutes.
+      default: 5
+      selector:
+        number: { min: 1, max: 60, unit_of_measurement: min, mode: box }
+    speaker:
+      name: Speaker
+      selector:
+        target:
+          entity:
+            domain: media_player
+    sound:
+      name: Sound
+      description: Path or URL of the sound. Files in /config/www are served from /local/.
+      default: /local/sounds/youve_got_mail.mp3
+      selector:
+        text: {}
+    volume:
+      name: Volume
+      description: Volume for the sound on Sonos speakers. Other speakers may ignore this.
+      default: 40
+      selector:
+        number: { min: 1, max: 100, unit_of_measurement: "%", mode: slider }
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input mailbox_sensor
+    from: "off"
+    to: "on"
+
+conditions:
+  - alias: First sound of the day
+    condition: template
+    value_template: "{{ as_timestamp(this.attributes.last_triggered, 0) < as_timestamp(today_at()) }}"
+  - alias: No house door activity in the quiet time
+    condition: state
+    entity_id: !input house_doors
+    state: ["on", "off", "unavailable", "unknown"]
+    for:
+      minutes: !input door_quiet_minutes
+
+actions:
+  - action: media_player.play_media
+    target: !input speaker
+    data:
+      media_content_id: !input sound
+      media_content_type: music
+      announce: true
+      extra:
+        volume: !input volume

@@ -45,6 +45,13 @@ blueprint:
                 - { label: Friday, value: fri }
                 - { label: Saturday, value: sat }
                 - { label: Sunday, value: sun }
+        pause_entity:
+          name: Pause while on
+          description: Optional. The run is skipped while this helper is on, for example during a safety alarm.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
     room_1:
       name: Room 1
       icon: mdi:numeric-1-circle-outline
@@ -1170,6 +1177,7 @@ mode: single
 max_exceeded: silent
 
 variables:
+  pause_entity: !input pause_entity
   room_1: !input room_1_room
   room_1_mode: !input room_1_mode
   room_1_suction: !input room_1_suction
@@ -1276,6 +1284,8 @@ triggers:
 conditions:
   - condition: time
     weekday: !input run_days
+  - condition: template
+    value_template: "{{ pause_entity == '' or is_state(pause_entity, 'off') }}"
 
 actions:
   - variables:

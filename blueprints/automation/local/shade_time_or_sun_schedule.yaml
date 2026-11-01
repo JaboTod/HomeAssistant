@@ -1,0 +1,238 @@
+blueprint:
+  name: Shade Schedule - Time or Sun Angle
+  description: >
+    Opens window shades at a time or sun angle, then lowers them gradually to
+    fully closed. The close can run from a start time for a set duration, or
+    from a starting sun angle down to an ending sun angle as the sun sets.
+
+
+    Position is calculated from the clock or the sun on every check, so the
+    close picks up in the right place after a restart. Shades are only ever
+    lowered during the close. A shade raised by hand is left alone until the
+    close finishes, then it closes with the others.
+  domain: automation
+  author: JaboTod
+  source_url: https://github.com/JaboTod/HomeAssistant/blob/main/blueprints/automation/local/shade_time_or_sun_schedule.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    shades:
+      name: Shades
+      description: >
+        Pick individual shades that report position. Don't pick a cover group
+        and its members together, or those shades get every command twice.
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+    opening:
+      name: Open
+      icon: mdi:blinds-open
+      input:
+        open_mode:
+          name: Open by
+          default: time
+          selector:
+            select:
+              mode: list
+              options:
+                - { label: Time of day, value: time }
+                - { label: Sun angle, value: sun }
+        open_time:
+          name: Open time
+          description: Used when opening by time of day.
+          default: "08:00:00"
+          selector:
+            time: {}
+        open_elevation:
+          name: Open sun angle
+          description: Used when opening by sun angle. Shades open as the rising sun passes this angle.
+          default: 5
+          selector:
+            number: { min: -18, max: 89, step: 0.5, unit_of_measurement: "°", mode: box }
+    closing:
+      name: Close
+      icon: mdi:blinds
+      input:
+        close_mode:
+          name: Close by
+          default: sun
+          selector:
+            select:
+              mode: list
+              options:
+                - { label: Start time and duration, value: time }
+                - { label: Sun angle, value: sun }
+        close_start_time:
+          name: Close start time
+          description: Used when closing by time. Shades begin lowering at this time.
+          default: "18:00:00"
+          selector:
+            time: {}
+        close_duration:
+          name: Close duration
+          description: Used when closing by time. Shades are fully closed this long after the start time.
+          default: 60
+          selector:
+            number: { min: 1, max: 1439, unit_of_measurement: min, mode: box }
+        close_start_elevation:
+          name: Close start sun angle
+          description: >
+            Used when closing by sun angle. Shades begin lowering when the
+            setting sun drops below this angle. If the sun never climbs this
+            high, they begin at solar noon from the matching position.
+          default: 30
+          selector:
+            number: { min: -18, max: 89, step: 0.5, unit_of_measurement: "°", mode: box }
+        close_end_elevation:
+          name: Close end sun angle
+          description: Used when closing by sun angle. Shades are fully closed when the setting sun reaches this angle. Must be lower than the start angle.
+          default: 0
+          selector:
+            number: { min: -18, max: 88.5, step: 0.5, unit_of_measurement: "°", mode: box }
+    tuning:
+      name: Fine tuning
+      icon: mdi:tune
+      collapsed: true
+      input:
+        min_step:
+          name: Smallest movement
+          description: A shade waits until it is at least this far above its scheduled position, which limits how often the motors run.
+          default: 5
+          selector:
+            number: { min: 1, max: 25, unit_of_measurement: "%", mode: slider }
+        manual_margin:
+          name: Manual raise margin
+          description: >
+            During the close, a shade this far above its scheduled position
+            counts as raised by hand and is left alone until the close
+            finishes. Set to 100 to keep pulling raised shades back down.
+          default: 15
+          selector:
+            number: { min: 5, max: 100, unit_of_measurement: "%", mode: slider }
+        pause_entity:
+          name: Pause while on
+          description: Optional. Shades are left alone while this helper is on, for example during a safety alarm.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
+
+mode: queued
+max: 10
+max_exceeded: silent
+
+triggers:
+  - trigger: time
+    at: !input open_time
+    id: open_time
+  - trigger: numeric_state
+    entity_id: sun.sun
+    attribute: elevation
+    above: !input open_elevation
+    id: open_sun
+  - trigger: numeric_state
+    entity_id: sun.sun
+    attribute: elevation
+    below: !input close_end_elevation
+    id: close_sun
+  - trigger: time_pattern
+    minutes: "/1"
+    id: tick
+
+variables:
+  pause_entity: !input pause_entity
+  shades: !input shades
+  open_mode: !input open_mode
+  close_mode: !input close_mode
+  close_start_time: !input close_start_time
+  close_duration: !input close_duration
+  close_start_elevation: !input close_start_elevation
+  close_end_elevation: !input close_end_elevation
+  min_step: !input min_step
+  manual_margin: !input manual_margin
+  # Seconds since the most recent close start; the modulo also carries a close past midnight.
+  close_elapsed: >-
+    {{ (as_timestamp(now()) - as_timestamp(today_at(close_start_time))) % 86400 }}
+  # Largest single drop in the schedule between updates: per minute for time, per degree for sun.
+  schedule_drop: >-
+    {{ 100 / close_duration if close_mode == 'time'
+       else 100 / ([close_start_elevation - close_end_elevation, 0.5] | max) }}
+  # Scheduled position while a close is running, otherwise -1.
+  target: >-
+    {% if close_mode == 'time' %}
+      {% set total = close_duration * 60 %}
+      {{ (100 - 100 * close_elapsed / total) | round(0, 'floor') | int if close_elapsed < total else -1 }}
+    {% else %}
+      {% set elevation = state_attr('sun.sun', 'elevation') %}
+      {% set span = [close_start_elevation - close_end_elevation, 0.5] | max %}
+      {% if elevation is number and state_attr('sun.sun', 'rising') == false
+            and elevation > close_end_elevation and elevation < close_start_elevation %}
+        {{ (100 * (elevation - close_end_elevation) / span) | round(0, 'floor') | int }}
+      {% else %}
+        -1
+      {% endif %}
+    {% endif %}
+  # Shades above schedule, excluding those moving, offline, or raised by hand.
+  shades_to_move: >-
+    {% set ns = namespace(ids=[]) %}
+    {% set limit = [manual_margin, min_step + 2 * schedule_drop] | max %}
+    {% if target >= 0 %}
+      {% for shade in shades %}
+        {% set position = state_attr(shade, 'current_position') %}
+        {% if states(shade) in ['open', 'closed'] and position is number
+              and position - target >= min_step and position - target <= limit %}
+          {% set ns.ids = ns.ids + [shade] %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {{ ns.ids }}
+  action_kind: >-
+    {% set total = close_duration * 60 %}
+    {% if (trigger.id == 'open_time' and open_mode == 'time')
+          or (trigger.id == 'open_sun' and open_mode == 'sun') %}
+      open
+    {% elif (trigger.id == 'close_sun' and close_mode == 'sun')
+          or (trigger.id == 'tick' and close_mode == 'time'
+              and close_elapsed >= total and close_elapsed < total + 60) %}
+      close
+    {% elif trigger.id == 'tick' and shades_to_move | count > 0 %}
+      step
+    {% else %}
+      none
+    {% endif %}
+
+conditions:
+  - condition: template
+    value_template: "{{ action_kind != 'none' }}"
+  - condition: template
+    value_template: "{{ pause_entity == '' or is_state(pause_entity, 'off') }}"
+
+actions:
+  - choose:
+      - alias: Open every shade
+        conditions:
+          - condition: template
+            value_template: "{{ action_kind == 'open' }}"
+        sequence:
+          - action: cover.open_cover
+            target:
+              entity_id: !input shades
+      - alias: Finish the close on every shade
+        conditions:
+          - condition: template
+            value_template: "{{ action_kind == 'close' }}"
+        sequence:
+          - action: cover.close_cover
+            target:
+              entity_id: !input shades
+      - alias: Lower shades to the scheduled position
+        conditions:
+          - condition: template
+            value_template: "{{ action_kind == 'step' }}"
+        sequence:
+          - action: cover.set_cover_position
+            target:
+              entity_id: "{{ shades_to_move }}"
+            data:
+              position: "{{ target }}"

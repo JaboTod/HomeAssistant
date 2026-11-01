@@ -3,8 +3,11 @@ blueprint:
   description: >
     When any CO or smoke detector goes into alarm: sets the given light(s) to
     full brightness bright white, unlocks the given lock (clear exit path),
-    and turns off the given climate entity (avoid feeding a fire/spreading
-    CO through ductwork).
+    turns off the given climate entity (avoid feeding a fire/spreading
+    CO through ductwork), opens the given shades (see outside, keep windows
+    clear as an exit), sends an alarm-level alert to the given phones, and
+    announces the alarm and its room on a speaker. It can also turn on a helper
+    that other automations check, so they stand down until someone resets it.
 
     Deliberately does NOT restore previous state afterward and has NO
     override/disable condition - unlike a convenience automation, a safety
@@ -60,12 +63,80 @@ blueprint:
           selector:
             entity:
               domain: climate
+        open_shades:
+          name: Shades to open
+          description: Leave garage doors out, or they will open during an alarm too.
+          default: {}
+          selector:
+            target:
+              entity:
+                domain: cover
+    alerts:
+      name: Alerts
+      icon: mdi:cellphone-message
+      input:
+        notify_devices:
+          name: Phones to alert
+          description: >
+            Home Assistant Companion app devices. Android phones get the alert
+            on the alarm stream, so it sounds even in Do Not Disturb.
+          default: []
+          selector:
+            device:
+              integration: mobile_app
+              multiple: true
+        alarm_flag:
+          name: Alarm flag helper
+          description: >
+            Optional. Turned on when an alarm starts and left on until someone
+            turns it off, however the detectors clear.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
+    announcement:
+      name: Spoken announcement
+      icon: mdi:speaker-wireless
+      input:
+        announce_speaker:
+          name: Speaker
+          description: Optional. A speaker that supports announcements, such as a Sonos.
+          default: ""
+          selector:
+            entity:
+              domain: media_player
+        announce_tts:
+          name: Text-to-speech engine
+          default: ""
+          selector:
+            entity:
+              domain: tts
+        announce_volume:
+          name: Volume
+          default: 80
+          selector:
+            number: { min: 1, max: 100, unit_of_measurement: "%" }
+        announce_repeats:
+          name: Times to repeat
+          default: 3
+          selector:
+            number: { min: 1, max: 10, mode: box }
 
 mode: single
 
 variables:
   brightness_pct: !input brightness
   color_temp_kelvin: !input color_temp_kelvin
+  notify_devices: !input notify_devices
+  alarm_flag: !input alarm_flag
+  announce_speaker: !input announce_speaker
+  announce_tts: !input announce_tts
+  announce_volume: !input announce_volume
+  announce_repeats: !input announce_repeats
+  # default('') keeps these from failing a manual run, which has no trigger entity.
+  alarm_label: "{{ 'Carbon monoxide' if state_attr(trigger.entity_id | default(''), 'device_class') == 'carbon_monoxide' else 'Smoke' }}"
+  alarm_room: "{{ area_name(trigger.entity_id | default('')) or '' }}"
+  alarm_text: "{{ alarm_label }} alarm{{ ' in the ' ~ alarm_room if alarm_room else '' }}"
 
 triggers:
   - trigger: state
@@ -75,20 +146,72 @@ triggers:
 conditions: []
 
 actions:
-  - action: light.turn_on
-    target: !input target_lights
-    data:
-      color_temp_kelvin: "{{ color_temp_kelvin }}"
-      brightness_pct: "{{ brightness_pct }}"
-    note: >
-      Full brightness, bright white via each light's native color-temperature
-      control (not RGB/HS saturation=0, which renders warmer/dimmer on
-      tunable-white fixtures). HA converts reasonably for RGB-only lights.
-  - action: lock.unlock
-    target:
-      entity_id: !input front_door_lock
-    note: Clear an exit path. If this is a group covering multiple physical locks, all of them unlock.
-  - action: climate.turn_off
-    target:
-      entity_id: !input climate_entity
-    note: Don't keep circulating air through a fire or CO source.
+  - if:
+      - condition: template
+        value_template: "{{ alarm_flag != '' }}"
+    then:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: "{{ alarm_flag }}"
+        continue_on_error: true
+        note: First, so other automations stand down before anything else happens.
+  - parallel:
+      - sequence:
+          - action: light.turn_on
+            target: !input target_lights
+            data:
+              color_temp_kelvin: "{{ color_temp_kelvin }}"
+              brightness_pct: "{{ brightness_pct }}"
+            note: >
+              Full brightness, bright white via each light's native color-temperature
+              control (not RGB/HS saturation=0, which renders warmer/dimmer on
+              tunable-white fixtures). HA converts reasonably for RGB-only lights.
+          - action: lock.unlock
+            target:
+              entity_id: !input front_door_lock
+            note: Clear an exit path. If this is a group covering multiple physical locks, all of them unlock.
+          - action: climate.turn_off
+            target:
+              entity_id: !input climate_entity
+            note: Don't keep circulating air through a fire or CO source.
+      - action: cover.open_cover
+        target: !input open_shades
+        continue_on_error: true
+        note: Its own parallel branch, so a slow or offline shade can't hold up anything else.
+      - repeat:
+          for_each: "{{ notify_devices }}"
+          sequence:
+            - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+              continue_on_error: true
+              data:
+                title: "{{ alarm_text }} at home"
+                message: Lights are coming on, the front doors are unlocking, the shades are opening and the HVAC is shutting off.
+                data:
+                  tag: co_smoke_alarm
+                  ttl: 0
+                  priority: high
+                  channel: alarm_stream
+              note: >
+                continue_on_error so one offline phone can't stop the others.
+                The alert runs in parallel with the response so neither can delay
+                or block the other.
+      - if:
+          - condition: template
+            value_template: "{{ announce_speaker != '' and announce_tts != '' }}"
+        then:
+          - repeat:
+              count: "{{ announce_repeats }}"
+              sequence:
+                - action: media_player.play_media
+                  target:
+                    entity_id: "{{ announce_speaker }}"
+                  continue_on_error: true
+                  data:
+                    media_content_type: music
+                    media_content_id: "media-source://tts/{{ announce_tts }}?message={{ (alarm_text ~ '. Please leave the house now.') | urlencode }}"
+                    announce: true
+                    extra:
+                      volume: "{{ announce_volume }}"
+                  note: Repeated because detector sirens can drown out a single announcement.
+                - delay:
+                    seconds: 10
