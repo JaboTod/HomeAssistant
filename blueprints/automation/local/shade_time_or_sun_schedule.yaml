@@ -117,6 +117,15 @@ blueprint:
           selector:
             entity:
               domain: input_boolean
+        hold_open_entity:
+          name: Don't open while on
+          description: >
+            Optional. The scheduled open is skipped while this helper is on,
+            for example while guests are sleeping. Evening closing still runs.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
 
 mode: queued
 max: 10
@@ -142,6 +151,7 @@ triggers:
 
 variables:
   pause_entity: !input pause_entity
+  hold_open_entity: !input hold_open_entity
   shades: !input shades
   open_mode: !input open_mode
   close_mode: !input close_mode
@@ -207,6 +217,8 @@ conditions:
     value_template: "{{ action_kind != 'none' }}"
   - condition: template
     value_template: "{{ pause_entity == '' or is_state(pause_entity, 'off') }}"
+  - condition: template
+    value_template: "{{ action_kind != 'open' or hold_open_entity == '' or is_state(hold_open_entity, 'off') }}"
 
 actions:
   - choose:
