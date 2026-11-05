@@ -77,6 +77,33 @@ blueprint:
       selector:
         entity:
           domain: light
+    ignore_automation_changes:
+      name: Ignore switch changes made by automations
+      description: 'Optional. When on, the Target Light is only updated when the
+        switch is changed at the wall or from a dashboard, not when another
+        automation changes the switch (for example one that keeps several
+        switches for the same lights in sync). Leave off for a single switch.
+
+        '
+      default: false
+      selector:
+        boolean: {}
+    final_check_delay:
+      name: Final check delay
+      description: 'Optional. After mirroring, wait this long and set the Target
+        Light to the switch''s final on/off state and brightness. This corrects
+        the lights if a stray brightness report from the switch arrived out of
+        order. 0 turns it off.
+
+        '
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.5
+          unit_of_measurement: s
+          mode: box
     config_held:
       name: Hold Config
       description: Action to run
@@ -343,6 +370,8 @@ action:
 - variables:
     target_light: !input target_light
     source_light: !input source_light
+    ignore_automation_changes: !input ignore_automation_changes
+    final_check_delay: !input final_check_delay
 - choose:
   - alias: Mirror source switch onto target light (single trigger - state and
       brightness always arrive together, so there's nothing to race)
@@ -351,6 +380,10 @@ action:
       id: source_change
     - condition: template
       value_template: '{{ target_light | count > 0 }}'
+    - alias: Skip changes made by automations, if that option is on
+      condition: template
+      value_template: '{{ not ignore_automation_changes or trigger.to_state.context.parent_id
+        is none }}'
     sequence:
     - choose:
       - alias: Source turned/stayed ON with a known brightness - mirror it
@@ -372,6 +405,40 @@ action:
         - action: light.turn_off
           target:
             entity_id: '{{ target_light }}'
+    - alias: Final check - set the lights to the switch's settled state, if that
+        option is on
+      if:
+      - condition: template
+        value_template: '{{ final_check_delay | float(0) > 0 }}'
+      then:
+      - delay:
+          seconds: '{{ final_check_delay | float(0) }}'
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: >-
+              {% set level = state_attr(source_light, 'brightness') %}
+              {% set ns = namespace(off=false) %}
+              {% for l in expand(target_light) %}
+              {% if l.state != 'on' or ((l.attributes.brightness | int(0)) - (level | int(0))) | abs > 3 %}
+              {% set ns.off = true %}
+              {% endif %}
+              {% endfor %}
+              {{ is_state(source_light, 'on') and level is number and ns.off }}
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id: '{{ target_light }}'
+            data:
+              brightness: '{{ state_attr(source_light, ''brightness'') }}'
+        - conditions:
+          - condition: template
+            value_template: '{{ is_state(source_light, ''off'') and expand(target_light)
+              | selectattr(''state'', ''eq'', ''on'') | list | count > 0 }}'
+          sequence:
+          - action: light.turn_off
+            target:
+              entity_id: '{{ target_light }}'
   - alias: Run the per-button custom action configured below
     conditions:
     - condition: template
