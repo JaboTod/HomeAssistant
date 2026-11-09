@@ -44,6 +44,15 @@ blueprint:
           default: "08:00:00"
           selector:
             time: {}
+        open_time_entity:
+          name: Open time helper
+          description: >
+            Optional. A time-only Date/Time helper. When set, it replaces the
+            open time above, so the time can be changed from a dashboard.
+          default: ""
+          selector:
+            entity:
+              domain: input_datetime
         open_elevation:
           name: Open sun angle
           description: Used when opening by sun angle. Shades open as the rising sun passes this angle.
@@ -90,6 +99,20 @@ blueprint:
           default: 0
           selector:
             number: { min: -18, max: 88.5, step: 0.5, unit_of_measurement: "°", mode: box }
+        close_start_entity:
+          name: Close start sun angle helper
+          description: Optional. A Number helper that replaces the close start sun angle above, so it can be changed from a dashboard.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        close_end_entity:
+          name: Close end sun angle helper
+          description: Optional. A Number helper that replaces the close end sun angle above, so it can be changed from a dashboard.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
     tuning:
       name: Fine tuning
       icon: mdi:tune
@@ -140,25 +163,43 @@ triggers:
     attribute: elevation
     above: !input open_elevation
     id: open_sun
-  - trigger: numeric_state
-    entity_id: sun.sun
-    attribute: elevation
-    below: !input close_end_elevation
+  # Fires as the setting sun drops below the close end angle. A template so the
+  # angle can come from a helper; it also fires if the helper is raised above
+  # the current sun angle during the evening.
+  - trigger: template
+    value_template: >-
+      {% set e = state_attr('sun.sun', 'elevation') %}
+      {% set limit = states(tv_close_end_entity) | float(tv_close_end)
+                     if tv_close_end_entity else tv_close_end | float(0) %}
+      {{ e is number and state_attr('sun.sun', 'rising') == false and e < limit }}
     id: close_sun
   - trigger: time_pattern
     minutes: "/1"
     id: tick
+
+trigger_variables:
+  tv_close_end: !input close_end_elevation
+  tv_close_end_entity: !input close_end_entity
 
 variables:
   pause_entity: !input pause_entity
   hold_open_entity: !input hold_open_entity
   shades: !input shades
   open_mode: !input open_mode
+  open_time_entity: !input open_time_entity
   close_mode: !input close_mode
   close_start_time: !input close_start_time
   close_duration: !input close_duration
-  close_start_elevation: !input close_start_elevation
-  close_end_elevation: !input close_end_elevation
+  close_start_entity: !input close_start_entity
+  close_end_entity: !input close_end_entity
+  close_start_fixed: !input close_start_elevation
+  close_end_fixed: !input close_end_elevation
+  close_start_elevation: >-
+    {{ states(close_start_entity) | float(close_start_fixed)
+       if close_start_entity else close_start_fixed | float(0) }}
+  close_end_elevation: >-
+    {{ states(close_end_entity) | float(close_end_fixed)
+       if close_end_entity else close_end_fixed | float(0) }}
   min_step: !input min_step
   manual_margin: !input manual_margin
   # Seconds since the most recent close start; the modulo also carries a close past midnight.
@@ -199,7 +240,10 @@ variables:
     {{ ns.ids }}
   action_kind: >-
     {% set total = close_duration * 60 %}
-    {% if (trigger.id == 'open_time' and open_mode == 'time')
+    {% set helper_open = states(open_time_entity)[:5] if open_time_entity else '' %}
+    {% if (trigger.id == 'open_time' and open_mode == 'time' and not open_time_entity)
+          or (trigger.id == 'tick' and open_mode == 'time' and open_time_entity
+              and helper_open == now().strftime('%H:%M'))
           or (trigger.id == 'open_sun' and open_mode == 'sun') %}
       open
     {% elif (trigger.id == 'close_sun' and close_mode == 'sun')

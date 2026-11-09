@@ -396,6 +396,12 @@ action:
       id: source_change
     - condition: template
       value_template: '{{ target_light | count > 0 }}'
+    - alias: Skip the switch reconnecting (after a restart or Zigbee dropout) - not a real press
+      condition: template
+      value_template: >-
+        {{ trigger.from_state is not none and trigger.to_state is not none
+           and trigger.from_state.state not in ['unavailable', 'unknown']
+           and trigger.to_state.state not in ['unavailable', 'unknown'] }}
     - alias: Skip changes made by automations, if that option is on
       condition: template
       value_template: '{{ not ignore_automation_changes or trigger.to_state.context.parent_id
